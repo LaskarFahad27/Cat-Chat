@@ -20,7 +20,8 @@ const RoomPage = () =>{
             ],
             scenario: {
                 mode: ZegoUIKitPrebuilt.GroupCall
-            }
+            },
+            showScreenSharingButton: true,
         })
     }
     return(
