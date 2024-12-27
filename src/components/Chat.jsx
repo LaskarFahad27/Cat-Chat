@@ -4,7 +4,7 @@ import './Chat.css'
 import { useParams } from 'react-router-dom';
 import { useNavigate } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faPaperPlane, faVideo, faArrowRightFromBracket, faBars, faUsers, faUser, faXmark} from '@fortawesome/free-solid-svg-icons';
+import { faPaperPlane, faVideo, faArrowRightFromBracket, faBars, faUsers, faUser, faXmark, faPenToSquare} from '@fortawesome/free-solid-svg-icons';
 import { getDatabase, push, ref, set, onChildAdded, onValue, remove, onDisconnect } from "firebase/database";
 import { auth, db } from './Firebase'; 
 import { doc, getDoc } from "firebase/firestore"; 
@@ -21,6 +21,7 @@ const Chat= () => {
   const chatListRef = ref(getDatabase(), `chatRooms/${code}/messages`);
   const typingRef = ref(getDatabase(), `chatRooms/${code}/typing`);
   const membersRef = ref(getDatabase(), `chatRooms/${code}/members`);
+  const [hoveredMessage, setHoveredMessage] = useState([]);
 
 const navigate = useNavigate();
 
@@ -87,6 +88,26 @@ useEffect(() => {
       setChats([...newChats]);
       });
 
+      onValue(chatListRef, (snapshot) => {
+
+        const updatedChats = [];
+    snapshot.forEach((childSnapshot) => {
+      const msgKey = childSnapshot.key;
+      const messageData = childSnapshot.val();
+
+          if (!messageData.seenBy || !messageData.seenBy.includes(name)) {
+            const updatedSeenBy = messageData.seenBy ? [...messageData.seenBy, name] : [name];
+            set(ref(getDatabase(), `chatRooms/${code}/messages/${msgKey}/seenBy`), updatedSeenBy);
+
+            if (messageData.editable) {
+              set(ref(getDatabase(), `chatRooms/${code}/messages/${msgKey}/editable`), false);
+           }
+          }
+          updatedChats.push({ key: msgKey, ...messageData });
+        });
+        setChats(updatedChats); 
+      }, [name, code]);
+
       onValue(typingRef, (snapshot) => {
         const typingData = snapshot.val();
         if (typingData) {
@@ -108,11 +129,16 @@ useEffect(() => {
   const sendChat = () => {
         if (msg.trim() !== '') {
             const chatRef = push(chatListRef);
-            set(chatRef, { name, message: msg });
+            set(chatRef, { name, message: msg, seenBy: [], editable: true });
             setMsg('');
             remove(ref(getDatabase(), `chatRooms/${code}/typing/${name}`));
             if (inputRef.current) inputRef.current.focus();
         }
+    };
+
+    const editMessage = (msgKey, newMessage) =>{
+      const messageRef = ref(getDatabase(), `chatRooms/${code}/messages/${msgKey}`);
+      set(messageRef, { ...chats.find(chat => chat.key === msgKey), message: newMessage });
     };
 
     const handleTyping = (e) => {
@@ -165,10 +191,26 @@ const toggleMembers = () => {
       <div id='chatCon' className='chat-container'>
        {chats.map((c,i)=> (
        <div key={i} className={`chatContainer ${c.name==name ? 'me':''}`}>
-        <p className='chatbox'>
-          <strong>{c.name}:</strong><br></br>
+       <div className='chatbox'
+       onMouseOver={() => setHoveredMessage(c)}
+       onMouseLeave={() => setHoveredMessage([])}
+       >
+          <strong>{c.name}:</strong>
           <span>{c.message}</span>
-        </p>
+          {c.name === name && c.editable && (
+                <button className="editBtn" onClick={() => {
+                    const newMessage = prompt("Edit your message:", c.message);
+                    if (newMessage) editMessage(c.key, newMessage);
+                }}>
+                    <FontAwesomeIcon icon={faPenToSquare} />
+                </button>
+            )}
+        </div>
+        {hoveredMessage === c &&  hoveredMessage.seenBy && (
+                <div className='seenBy'>
+                  Seen by: {hoveredMessage.seenBy.join(", ")}
+                </div>
+              )}
         </div>))}
         <div className='typing-status-container'>
       {Array.isArray(typingUser) && typingUser.map((user, index) => (
