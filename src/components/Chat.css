@@ -75,7 +75,7 @@ body{
     border-radius: 5px;
     position: absolute;
     z-index: 3;
-    top: 0px;
+    top: 36px;
     right: 0px;
   }
   .barCon{
@@ -109,6 +109,11 @@ body{
     background-color: rgb(89, 89, 89);
     max-width: 50vW;
     z-index: 2;
+    display: flex;
+    flex-direction: column;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    white-space: pre-wrap;
     font-family: helvetica;
     color: white;
   }
@@ -119,8 +124,6 @@ body{
     background-color: rgb(74, 31, 246);
     color: white;
     max-width: 50vW;
-    display: flex;
-    flex-direction: column;
   }
   .chatContainer.me{
     flex-direction: row-reverse;
@@ -194,7 +197,6 @@ body{
     border-radius: 3px;
     background-image: linear-gradient(rgb(34, 8, 138), rgb(82, 31, 80));
     pointer-events: auto;
-    position: relative;
     z-index: 2;
   }
   .watermark{

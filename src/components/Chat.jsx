@@ -84,25 +84,28 @@ useEffect(() => {
       }
     const newChats = [];
     onChildAdded(chatListRef, (data) => {
-      newChats.push(data.val());
+      const messageKey = data.key;
+      const messageData = data.val();
+      if (user && messageData.name !== name) {
+        const seenRef = ref(getDatabase(), `chatRooms/${code}/messages/${messageKey}/seenBy`);
+        const updatedSeenBy = [...(messageData.seenBy || [])];
+
+        if (!updatedSeenBy.includes(name)) {
+          updatedSeenBy.push(name); 
+        }
+        set(seenRef, updatedSeenBy);
+      }
+  
+      newChats.push({ key: messageKey, ...messageData });
       setChats([...newChats]);
       });
 
       onValue(chatListRef, (snapshot) => {
-
-        const updatedChats = [];
-    snapshot.forEach((childSnapshot) => {
+      const updatedChats = [];
+      snapshot.forEach((childSnapshot) => {
       const msgKey = childSnapshot.key;
       const messageData = childSnapshot.val();
 
-          if (!messageData.seenBy || !messageData.seenBy.includes(name)) {
-            const updatedSeenBy = messageData.seenBy ? [...messageData.seenBy, name] : [name];
-            set(ref(getDatabase(), `chatRooms/${code}/messages/${msgKey}/seenBy`), updatedSeenBy);
-
-            if (messageData.editable) {
-              set(ref(getDatabase(), `chatRooms/${code}/messages/${msgKey}/editable`), false);
-           }
-          }
           updatedChats.push({ key: msgKey, ...messageData });
         });
         setChats(updatedChats); 
@@ -136,11 +139,17 @@ useEffect(() => {
         }
     };
 
-    const editMessage = (msgKey, newMessage) =>{
+    const editMessage = (msgKey, newMessage) => {
       const messageRef = ref(getDatabase(), `chatRooms/${code}/messages/${msgKey}`);
-      set(messageRef, { ...chats.find(chat => chat.key === msgKey), message: newMessage });
+      const messageData = chats.find(chat => chat.key === msgKey);
+    
+      if (messageData) {
+        set(messageRef, { ...messageData, message: newMessage, editable: false });
+        setChats(prevChats => prevChats.map(chat => 
+          chat.key === msgKey ? { ...chat, message: newMessage, editable: false } : chat
+        ));
+      }
     };
-
     const handleTyping = (e) => {
         setMsg(e.target.value);
         if (e.target.value.trim() !== '') {
@@ -197,14 +206,14 @@ const toggleMembers = () => {
        >
           <strong>{c.name}:</strong>
           <span>{c.message}</span>
-          {c.name === name && c.editable && (
-                <button className="editBtn" onClick={() => {
-                    const newMessage = prompt("Edit your message:", c.message);
-                    if (newMessage) editMessage(c.key, newMessage);
-                }}>
-                    <FontAwesomeIcon icon={faPenToSquare} />
-                </button>
-            )}
+          {c.name === name && (!c.seenBy || c.seenBy.length === 0) && (
+            <button className="editBtn" onClick={() => {
+                const newMessage = prompt("Edit your message:", c.message);
+                if (newMessage) editMessage(c.key, newMessage);
+            }}>
+                <FontAwesomeIcon icon={faPenToSquare} />
+            </button>
+          )}
         </div>
         {hoveredMessage === c &&  hoveredMessage.seenBy && (
                 <div className='seenBy'>
