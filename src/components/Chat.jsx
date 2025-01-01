@@ -4,7 +4,7 @@ import './Chat.css'
 import { useParams } from 'react-router-dom';
 import { useNavigate } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faPaperPlane, faVideo, faArrowRightFromBracket, faBars, faUsers, faUser, faXmark, faPenToSquare} from '@fortawesome/free-solid-svg-icons';
+import { faPaperPlane, faVideo, faArrowRightFromBracket, faBars, faUsers, faUser, faXmark, faPenToSquare, faImage} from '@fortawesome/free-solid-svg-icons';
 import { getDatabase, push, ref, set, onChildAdded, onValue, remove, onDisconnect } from "firebase/database";
 import { auth, db } from './Firebase'; 
 import { doc, getDoc } from "firebase/firestore"; 
@@ -14,6 +14,8 @@ const Chat= () => {
   const [name, setName] = useState("");
   const [chats, setChats] = useState([]);
   const [msg, setMsg] = useState("");
+  const [file, setFile] = useState(null);
+  const [preview, setPreview] = useState("");
   const [typingUser, setTypingUser] = useState("");
   const inputRef = useRef(null);
   const [members, setMembers] = useState([]);
@@ -129,14 +131,48 @@ useEffect(() => {
       });
   },[name, code])
 
+  const handleFileChange = (e) => {
+    const selectedFile = e.target.files[0];
+    setFile(selectedFile); 
+    setPreview(selectedFile ? "Image is Selected" : "");
+    const imgIconElement = document.getElementById("imgIcon");
+     if (imgIconElement) {
+     imgIconElement.style.display = "none";
+  }
+    document.getElementById("unSelect").style.display = "flex";
+    document.getElementById("msgIn").style.display = "none";
+  };
+  const unSelect = () => {
+    setFile(null); 
+    setPreview(""); 
+    document.getElementById("imgIn").value = "";
+    document.getElementById("unSelect").style.display = "none";
+    document.getElementById("msgIn").style.display = "flex";
+  };
+
   const sendChat = () => {
-        if (msg.trim() !== '') {
+        if (msg.trim() !=="" || file) {
             const chatRef = push(chatListRef);
-            set(chatRef, { name, message: msg, seenBy: [], editable: true });
+            if (file) {
+              const reader = new FileReader();
+              reader.onload = () => {
+                const base64Image = reader.result;
+                set(chatRef, { name, message: msg, image: base64Image, seenBy: [] });
+                setFile(null);
+              };
+              reader.readAsDataURL(file);
+            } else {
+              set(chatRef, { name, message: msg, seenBy: [], editable: true });
+            }
+           
             setMsg('');
             remove(ref(getDatabase(), `chatRooms/${code}/typing/${name}`));
             if (inputRef.current) inputRef.current.focus();
         }
+        setFile(null); 
+          setPreview(""); 
+          document.getElementById("imgIn").value = "";
+          document.getElementById("unSelect").style.display = "none";
     };
 
     const editMessage = (msgKey, newMessage) => {
@@ -205,7 +241,11 @@ const toggleMembers = () => {
        onMouseLeave={() => setHoveredMessage([])}
        >
           <strong>{c.name}:</strong>
-          <span>{c.message}</span>
+          {c.image ? (
+        <img src={c.image} alt="Sent" style={{ maxWidth: '200px', borderRadius: '3px' }} />
+      ) : (
+        <span>{c.message}</span>
+      )}
           {c.name === name && (!c.seenBy || c.seenBy.length === 0) && (
             <button className="editBtn" onClick={() => {
                 const newMessage = prompt("Edit your message:", c.message);
@@ -246,9 +286,24 @@ const toggleMembers = () => {
         </div>
       </div>
       <div className='bottom'>
+        <div className='imgSharing'>
+         <input 
+            type="file"
+            name="imgIn"
+            id="imgIn"
+            accept="image/*"
+            onChange={handleFileChange}
+          />
+           <label htmlFor="imgIn" className="imgIcon">
+          <FontAwesomeIcon icon={faImage} />
+          </label>
+          <div className="preview">{preview}
+        <button id="unSelect" onClick={unSelect}><FontAwesomeIcon icon={faXmark} /></button>
+        </div>
+          </div>
         <input type='text'
                value={msg}
-               ref={inputRef}
+               id='msgIn'
                onInput={handleTyping}
                onKeyDown={handleKeyDown}>
         </input>

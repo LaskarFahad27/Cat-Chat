@@ -168,10 +168,38 @@ body{
     margin-left: 10px;
     padding-left: 15px;
   }
+  .imgSharing{
+    display: flex;
+
+  }
+  #imgIn{
+    display: none;
+  }
+  .imgIcon{
+    font-size: 25px;
+    color: rgb(74, 31, 246);
+    margin-left: 20px;
+    display: flex;
+  }
+  .preview{
+    color: rgb(74, 31, 246);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-left: 10px;
+    font-size: 17px;
+  }
+  #unSelect{
+    background: none;
+    border: none;
+    display: none;
+    color: red;
+    font-size: 17px;
+  }
   .bottom input:focus{
     border: 1.5px solid rgb(74, 31, 246);
   }
-  .bottom button{
+  .send{
     width: 40px;
     height: 40px;
     display: flex;
