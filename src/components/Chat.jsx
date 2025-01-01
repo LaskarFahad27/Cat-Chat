@@ -173,6 +173,7 @@ useEffect(() => {
           setPreview(""); 
           document.getElementById("imgIn").value = "";
           document.getElementById("unSelect").style.display = "none";
+          document.getElementById("msgIn").style.display = "flex";
     };
 
     const editMessage = (msgKey, newMessage) => {
