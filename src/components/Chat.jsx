@@ -178,6 +178,7 @@ useEffect(() => {
             setMsg('');
             setRepliedMessage("");
             setReplyIndicator("");
+            document.getElementById("cnclRplyBtn").style.display = "none";
             remove(ref(getDatabase(), `chatRooms/${code}/typing/${name}`));
             if (inputRef.current) inputRef.current.focus();
         }
