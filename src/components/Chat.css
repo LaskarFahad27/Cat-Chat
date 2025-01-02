@@ -116,7 +116,18 @@ body{
     white-space: pre-wrap;
     font-family: helvetica;
     color: white;
+    position: relative;
   }
+
+  .rply{
+  position: absolute;
+  right: -33px;
+ }
+ .me .rply{
+  visibility: hidden;
+  opacity: 0;
+  display: none;
+ }
   .chatContainer{
     display: flex;
   }
@@ -127,6 +138,25 @@ body{
   }
   .chatContainer.me{
     flex-direction: row-reverse;
+  }
+  #rply{
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 5px;
+    background: none;
+    border: none;
+    font-size: 17px;
+  }
+  .reply-text{
+    background-color: rgb(89, 89, 89);
+    padding: 3px;
+    border-radius: 2px;
+    font-size: 12px;
+  }
+  .rplyIcon{
+    transform: rotate(180deg);
   }
   .typing-status-container {
     display: flex;
@@ -152,11 +182,30 @@ body{
     bottom: 0px;
     background-color: white;
     width: 100%;
-    display: flex;
     align-items: center;
     justify-content: space-between;
     flex-direction: row;
     margin-bottom: 10px;
+  }
+  .replyIndicator{
+    color: rgb(96, 94, 94);
+    margin-bottom: 5px;
+    margin-left: 20px;
+    font-size: 14px;
+    font-family: helvetica;
+    display: flex;
+  }
+  #cnclRplyBtn{
+    background: none;
+    border: none;
+    color: rgb(116, 99, 99);
+    margin-left: 8px;
+    font-size: 14px;
+    display: none;
+    align-items: center;
+  }
+  .msgOptns{
+    display: flex;
   }
   .bottom input{
     padding: 6px;

@@ -4,7 +4,7 @@ import './Chat.css'
 import { useParams } from 'react-router-dom';
 import { useNavigate } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faPaperPlane, faVideo, faArrowRightFromBracket, faBars, faUsers, faUser, faXmark, faPenToSquare, faImage} from '@fortawesome/free-solid-svg-icons';
+import { faPaperPlane, faVideo, faArrowRightFromBracket, faBars, faUsers, faUser, faXmark, faPenToSquare, faImage, faReply } from '@fortawesome/free-solid-svg-icons';
 import { getDatabase, push, ref, set, onChildAdded, onValue, remove, onDisconnect } from "firebase/database";
 import { auth, db } from './Firebase'; 
 import { doc, getDoc } from "firebase/firestore"; 
@@ -24,6 +24,8 @@ const Chat= () => {
   const typingRef = ref(getDatabase(), `chatRooms/${code}/typing`);
   const membersRef = ref(getDatabase(), `chatRooms/${code}/members`);
   const [hoveredMessage, setHoveredMessage] = useState([]);
+  const [repliedMessage, setRepliedMessage] = useState("");
+  const [replyIndicator, setReplyIndicator] = useState("");
 
 const navigate = useNavigate();
 
@@ -150,22 +152,32 @@ useEffect(() => {
     document.getElementById("msgIn").style.display = "flex";
   };
 
+  const handleReplyClick = (c) => {
+    let rplyTo = c.message;
+    setRepliedMessage(rplyTo);  
+    setReplyIndicator(`Replying to:  ${rplyTo}`); 
+    document.getElementById("cnclRplyBtn").style.display = "flex";  // Cancel button দেখান
+  };
+
   const sendChat = () => {
         if (msg.trim() !=="" || file) {
             const chatRef = push(chatListRef);
+
             if (file) {
               const reader = new FileReader();
               reader.onload = () => {
                 const base64Image = reader.result;
-                set(chatRef, { name, message: msg, image: base64Image, seenBy: [] });
+                set(chatRef, { name, repliedTo: repliedMessage, message: msg, image: base64Image, seenBy: [] });
                 setFile(null);
               };
               reader.readAsDataURL(file);
             } else {
-              set(chatRef, { name, message: msg, seenBy: [], editable: true });
+              set(chatRef, { name, repliedTo: repliedMessage, message: msg, seenBy: [], editable: true });
             }
            
             setMsg('');
+            setRepliedMessage("");
+            setReplyIndicator("");
             remove(ref(getDatabase(), `chatRooms/${code}/typing/${name}`));
             if (inputRef.current) inputRef.current.focus();
         }
@@ -215,6 +227,12 @@ const toggleMembers = () => {
   }
 };
 
+const cancelRply = () => {
+          setRepliedMessage("");
+          setReplyIndicator("");
+          document.getElementById("cnclRplyBtn").style.display = "none";
+    };
+
   return (
     <div className='ppp'>
       <div>
@@ -237,10 +255,17 @@ const toggleMembers = () => {
       <div id='chatCon' className='chat-container'>
        {chats.map((c,i)=> (
        <div key={i} className={`chatContainer ${c.name==name ? 'me':''}`}>
+        <div className='msgDtls'>
        <div className='chatbox'
        onMouseOver={() => setHoveredMessage(c)}
        onMouseLeave={() => setHoveredMessage([])}
        >
+        
+        {c.repliedTo && (
+                <div className="reply-text">
+                  <FontAwesomeIcon className='rplyIcon' icon={faReply} /> {c.repliedTo}
+                </div>
+              )}
           <strong>{c.name}:</strong>
           {c.image ? (
         <img src={c.image} alt="Sent" style={{ maxWidth: '200px', borderRadius: '3px' }} />
@@ -255,12 +280,22 @@ const toggleMembers = () => {
                 <FontAwesomeIcon icon={faPenToSquare} />
             </button>
           )}
+          {hoveredMessage === c && (
+                <button id='rply' className='rply'
+                onClick={() => handleReplyClick(c)}
+                onMouseOver={() => setHoveredMessage(c)}
+                 >
+                <FontAwesomeIcon icon={faReply} />
+                 </button>
+              )}
         </div>
         {hoveredMessage === c &&  hoveredMessage.seenBy && (
                 <div className='seenBy'>
                   Seen by: {hoveredMessage.seenBy.join(", ")}
                 </div>
               )}
+              </div>
+              
         </div>))}
         <div className='typing-status-container'>
       {Array.isArray(typingUser) && typingUser.map((user, index) => (
@@ -287,6 +322,14 @@ const toggleMembers = () => {
         </div>
       </div>
       <div className='bottom'>
+        <div className='replyIndicator'>
+          {replyIndicator}
+          <button id='cnclRplyBtn'
+                  onClick={cancelRply}>
+          <FontAwesomeIcon id='cancelRply' icon={faXmark} />
+          </button>
+        </div>
+        <div className='msgOptns'>
         <div className='imgSharing'>
          <input 
             type="file"
@@ -313,7 +356,7 @@ const toggleMembers = () => {
           <FontAwesomeIcon icon={faPaperPlane} />
         </button>
       </div>
-
+      </div>
       </div>
     </div>
   )
