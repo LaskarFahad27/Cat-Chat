@@ -13,31 +13,10 @@ const Login = () => {
 
     const navigate = useNavigate();
 
-    // useEffect(() => {
-    //     onAuthStateChanged(auth, (user) => {
-    //         if (user) {
-    //             navigate ('./Chat');
-    //         }
-    //     });
-    // }, []);
-
-    // const handleLogin = async(e) => {
-    //     e.preventDefault();
-    //     try {
-    //       await signInWithEmailAndPassword(auth, email, password);
-    //       alert("Logged In");
-    //       window.location.href = "./Chat";
-    //     }catch (error) {
-    //      alert(error.message);
-    //     }
-    //    };
-        
-
-    //New Code Start
     useEffect(() => {
         onAuthStateChanged(auth, (user) => {
             if (user) {
-                navigate('/joinChat'); // লগইন সফল হলে JoinChat পেজে রিডাইরেক্ট
+                navigate('/joinChat'); 
             }
         });
     }, []);

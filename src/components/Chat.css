@@ -158,6 +158,12 @@ body{
   .rplyIcon{
     transform: rotate(180deg);
   }
+  #play{
+    background: none;
+    color: white;
+    border: none;
+    cursor: pointer;
+  }
   .typing-status-container {
     display: flex;
     flex-direction: column;
@@ -245,8 +251,34 @@ body{
     color: red;
     font-size: 17px;
   }
+  #endRcrd{
+    background: none;
+    border: none;
+    display: none;
+    color: green;
+    font-size: 17px;
+  }
+  #cancelRcrd{
+    background: none;
+    border: none;
+    display: none;
+    font-size: 24px;
+    color: red;
+    margin-left: 10px;
+  }
+  #startRcrd{
+    background: none;
+    border: none;
+    font-size: 24px;
+    color: rgb(74, 31, 246);
+    margin-left: 10px;
+  }
   .bottom input:focus{
     border: 1.5px solid rgb(74, 31, 246);
+  }
+  #recording{
+    display: flex;
+    margin-top: 5px;
   }
   .send{
     width: 40px;

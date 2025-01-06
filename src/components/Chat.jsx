@@ -4,7 +4,7 @@ import './Chat.css'
 import { useParams } from 'react-router-dom';
 import { useNavigate } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faPaperPlane, faVideo, faArrowRightFromBracket, faBars, faUsers, faUser, faXmark, faPenToSquare, faImage, faReply } from '@fortawesome/free-solid-svg-icons';
+import { faPaperPlane, faVideo, faArrowRightFromBracket, faBars, faUsers, faUser, faXmark, faPenToSquare, faImage, faReply, faMicrophone, faPlay, faCheck } from '@fortawesome/free-solid-svg-icons';
 import { getDatabase, push, ref, set, onChildAdded, onValue, remove, onDisconnect } from "firebase/database";
 import { auth, db } from './Firebase'; 
 import { doc, getDoc } from "firebase/firestore"; 
@@ -26,6 +26,10 @@ const Chat= () => {
   const [hoveredMessage, setHoveredMessage] = useState([]);
   const [repliedMessage, setRepliedMessage] = useState("");
   const [replyIndicator, setReplyIndicator] = useState("");
+  const [isRecording, setIsRecording] = useState(false);
+  const [audioBlob, setAudioBlob] = useState(null);
+  const mediaRecorderRef = useRef(null);
+  const [recording, setRecording] = useState("");
 
 const navigate = useNavigate();
 
@@ -159,35 +163,126 @@ useEffect(() => {
     document.getElementById("cnclRplyBtn").style.display = "flex";  // Cancel button দেখান
   };
 
-  const sendChat = () => {
-        if (msg.trim() !=="" || file) {
-            const chatRef = push(chatListRef);
+  const startRecording = async () => {
+    setRecording("Recording...");
+    document.getElementById("endRcrd").style.display= "flex";
+    document.getElementById("cancelRcrd").style.display= "flex";
+    document.getElementById("startRcrd").style.display= "none";
+    document.getElementById("msgIn").style.display= "none";
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mediaRecorder = new MediaRecorder(stream);
+  
+      mediaRecorder.ondataavailable = (event) => {
+        setAudioBlob(event.data);
+      };
+  
+      mediaRecorder.start();
+  
+      mediaRecorderRef.current = mediaRecorder;
+    } catch (err) {
+      console.error("Error accessing microphone:", err);
+    }
+  };
+  
+  const stopRecording = () => {
+    if (mediaRecorderRef.current) {
+      mediaRecorderRef.current.stop();
+      mediaRecorderRef.current.stream.getTracks().forEach(track => track.stop());
+      setIsRecording(false);
+      mediaRecorderRef.current = null;
+      document.getElementById("endRcrd").style.display = "none"; 
+      setRecording("Ready To Share");
+    }
+  };
 
-            if (file) {
-              const reader = new FileReader();
-              reader.onload = () => {
-                const base64Image = reader.result;
-                set(chatRef, { name, repliedTo: repliedMessage, message: msg, image: base64Image, seenBy: [] });
-                setFile(null);
-              };
-              reader.readAsDataURL(file);
-            } else {
-              set(chatRef, { name, repliedTo: repliedMessage, message: msg, seenBy: [], editable: true });
-            }
-           
-            setMsg('');
-            setRepliedMessage("");
-            setReplyIndicator("");
-            document.getElementById("cnclRplyBtn").style.display = "none";
-            remove(ref(getDatabase(), `chatRooms/${code}/typing/${name}`));
-            if (inputRef.current) inputRef.current.focus();
+  const cancelRecording = () => {
+    for (let i = 0; i < 3; i++) {
+      setTimeout(() => {
+        if (mediaRecorderRef.current) {
+          mediaRecorderRef.current.stop();
+          mediaRecorderRef.current.stream.getTracks().forEach((track) => track.stop());
+          mediaRecorderRef.current = null;
         }
-        setFile(null); 
-          setPreview(""); 
-          document.getElementById("imgIn").value = "";
-          document.getElementById("unSelect").style.display = "none";
-          document.getElementById("msgIn").style.display = "flex";
-    };
+        setRecording("");   
+        setAudioBlob(null);  
+        
+        document.getElementById("endRcrd").style.display = "none"; 
+        document.getElementById("cancelRcrd").style.display = "none"; 
+        document.getElementById("startRcrd").style.display = "flex";
+        document.getElementById("msgIn").style.display = "flex";
+      }, i * 100);
+    }
+  };
+  
+
+  const sendChat = () => {
+    setRecording("");
+    document.getElementById("endRcrd").style.display= "none";
+    document.getElementById("msgIn").style.display= "flex";
+    document.getElementById("startRcrd").style.display = "flex";
+    document.getElementById("cancelRcrd").style.display = "none"; 
+    
+    if (audioBlob) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const base64Audio = reader.result.split(",")[1]; 
+        const audioDbRef = push(chatListRef); 
+        set(audioDbRef, { 
+          name, 
+          audio: base64Audio, 
+          message: "Voice Message", 
+          seenBy: [] 
+        });
+      };
+      reader.readAsDataURL(audioBlob); 
+      setAudioBlob(null); 
+      return;
+    }
+
+    if (msg.trim() !== "" || file) {
+      const chatRef = push(chatListRef);
+      let audioURL = null;
+    if (file) {
+      
+      const reader = new FileReader();
+      reader.onload = () => {
+        const base64Image = reader.result;
+        set(chatRef, {
+          name,
+          repliedTo: repliedMessage,
+          message: msg,
+          image: base64Image,
+          seenBy: [],
+        });
+        setFile(null);
+      };
+      reader.readAsDataURL(file); 
+    } else {
+      set(chatRef, {
+        name,
+        repliedTo: repliedMessage,
+        message: msg,
+        seenBy: [],
+      });
+    }
+
+    setAudioBlob(null);
+    setMsg("");
+    setRepliedMessage("");
+    setReplyIndicator("");
+    document.getElementById("cnclRplyBtn").style.display = "none";
+    remove(ref(getDatabase(), `chatRooms/${code}/typing/${name}`));
+    if (inputRef.current) inputRef.current.focus();
+  }
+  setFile(null);
+  setPreview("");
+  document.getElementById("imgIn").value = "";
+  document.getElementById("unSelect").style.display = "none";
+  document.getElementById("msgIn").style.display = "flex";
+
+};
+
 
     const editMessage = (msgKey, newMessage) => {
       const messageRef = ref(getDatabase(), `chatRooms/${code}/messages/${msgKey}`);
@@ -273,6 +368,25 @@ const cancelRply = () => {
       ) : (
         <span>{c.message}</span>
       )}
+      {c.audio && (
+  <div className="audio-container">
+    <audio id={`audio-${c.key}`}>
+      <source src={`data:audio/webm;base64,${c.audio}`} type="audio/webm" />
+      Your browser does not support the audio element.
+    </audio>
+    <button id='play'
+      onClick={() => {
+        const audioElement = document.getElementById(`audio-${c.key}`);
+        if (audioElement) {
+          audioElement.play();
+        }
+      }}
+    >
+      <FontAwesomeIcon icon={faPlay} />
+    </button>
+  </div>
+)}
+
           {c.name === name && (!c.seenBy || c.seenBy.length === 0) && (
             <button className="editBtn" onClick={() => {
                 const newMessage = prompt("Edit your message:", c.message);
@@ -281,6 +395,7 @@ const cancelRply = () => {
                 <FontAwesomeIcon icon={faPenToSquare} />
             </button>
           )}
+        
           {hoveredMessage === c && (
                 <button id='rply' className='rply'
                 onClick={() => handleReplyClick(c)}
@@ -342,8 +457,19 @@ const cancelRply = () => {
            <label htmlFor="imgIn" className="imgIcon">
           <FontAwesomeIcon icon={faImage} />
           </label>
+          <div className='audioRecording'>
+              <button id='startRcrd' onClick={startRecording}>
+              <FontAwesomeIcon icon={faMicrophone} />
+              </button>
+              <button id='cancelRcrd' onClick={cancelRecording}>
+              <FontAwesomeIcon icon={faXmark} />
+              </button>
+            </div>
           <div className="preview">{preview}
         <button id="unSelect" onClick={unSelect}><FontAwesomeIcon icon={faXmark} /></button>
+        </div>
+        <div id='recording'>{recording}
+        <button id="endRcrd" onClick={stopRecording}><FontAwesomeIcon icon={faCheck} /></button>
         </div>
           </div>
         <input type='text'
