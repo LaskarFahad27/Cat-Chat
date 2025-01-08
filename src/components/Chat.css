@@ -158,11 +158,14 @@ body{
   .rplyIcon{
     transform: rotate(180deg);
   }
-  #play{
+  #play, #pause{
     background: none;
     color: white;
     border: none;
     cursor: pointer;
+  }
+  #pause{
+    display: none;
   }
   .typing-status-container {
     display: flex;

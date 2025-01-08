@@ -4,7 +4,7 @@ import './Chat.css'
 import { useParams } from 'react-router-dom';
 import { useNavigate } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faPaperPlane, faVideo, faArrowRightFromBracket, faBars, faUsers, faUser, faXmark, faPenToSquare, faImage, faReply, faMicrophone, faPlay, faCheck } from '@fortawesome/free-solid-svg-icons';
+import { faPaperPlane, faVideo, faArrowRightFromBracket, faBars, faUsers, faUser, faXmark, faPenToSquare, faImage, faReply, faMicrophone, faPlay, faCheck, faPause } from '@fortawesome/free-solid-svg-icons';
 import { getDatabase, push, ref, set, onChildAdded, onValue, remove, onDisconnect } from "firebase/database";
 import { auth, db } from './Firebase'; 
 import { doc, getDoc } from "firebase/firestore"; 
@@ -169,6 +169,7 @@ useEffect(() => {
     document.getElementById("cancelRcrd").style.display= "flex";
     document.getElementById("startRcrd").style.display= "none";
     document.getElementById("msgIn").style.display= "none";
+    document.getElementById("send").style.display= "none";
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       const mediaRecorder = new MediaRecorder(stream);
@@ -194,6 +195,7 @@ useEffect(() => {
       document.getElementById("endRcrd").style.display = "none"; 
       setRecording("Ready To Share");
     }
+    document.getElementById("send").style.display= "flex";
   };
 
   const cancelRecording = () => {
@@ -370,20 +372,52 @@ const cancelRply = () => {
       )}
       {c.audio && (
   <div className="audio-container">
-    <audio id={`audio-${c.key}`}>
+    <audio id={`audio-${c.key}`}
+           onEnded={()=>{
+            document.getElementById(`play-${c.key}`).style.display = "flex";
+            document.getElementById(`pause-${c.key}`).style.display = "none";  
+           }}>
       <source src={`data:audio/webm;base64,${c.audio}`} type="audio/webm" />
       Your browser does not support the audio element.
     </audio>
-    <button id='play'
+    <button id={`play-${c.key}`}
+     style={{
+        background: "none",
+        color: "white",
+        border: "none",
+        cursor: "pointer"
+       }}
       onClick={() => {
         const audioElement = document.getElementById(`audio-${c.key}`);
         if (audioElement) {
           audioElement.play();
+          document.getElementById(`play-${c.key}`).style.display = "none";
+          document.getElementById(`pause-${c.key}`).style.display = "flex";  
+              
         }
       }}
     >
-      <FontAwesomeIcon icon={faPlay} />
+      <FontAwesomeIcon id='playIcon' icon={faPlay} />
     </button>
+    <button id={`pause-${c.key}`}
+     style={{ display: "none",
+              background: "none",
+              color: "white",
+              border: "none",
+              cursor: "pointer"
+      }}
+      onClick={() => {
+        const audioElement = document.getElementById(`audio-${c.key}`);
+        if (audioElement) {
+          audioElement.pause();
+          document.getElementById(`play-${c.key}`).style.display = "flex";
+          document.getElementById(`pause-${c.key}`).style.display = "none";
+        }
+      }}
+    >
+      <FontAwesomeIcon id='pauseIcon' icon={faPause} />
+    </button>
+    
   </div>
 )}
 
@@ -478,7 +512,7 @@ const cancelRply = () => {
                onInput={handleTyping}
                onKeyDown={handleKeyDown}>
         </input>
-        <button className='send'
+        <button className='send' id='send'
                 onClick={e=>sendChat()}>
           <FontAwesomeIcon icon={faPaperPlane} />
         </button>
