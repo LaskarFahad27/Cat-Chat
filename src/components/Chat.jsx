@@ -160,7 +160,7 @@ useEffect(() => {
     let rplyTo = c.message;
     setRepliedMessage(rplyTo);  
     setReplyIndicator(`Replying to:  ${rplyTo}`); 
-    document.getElementById("cnclRplyBtn").style.display = "flex";  // Cancel button দেখান
+    document.getElementById("cnclRplyBtn").style.display = "flex";
   };
 
   const startRecording = async () => {
@@ -213,6 +213,7 @@ useEffect(() => {
         document.getElementById("cancelRcrd").style.display = "none"; 
         document.getElementById("startRcrd").style.display = "flex";
         document.getElementById("msgIn").style.display = "flex";
+        document.getElementById("send").style.display= "flex";
       }, i * 100);
     }
   };
