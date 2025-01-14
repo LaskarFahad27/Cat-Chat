@@ -15,13 +15,14 @@ const RoomPage = () =>{
             sharedLinks: [
                 {
                     name: 'Copy Link',
-                    url: `http://localhost5173/room/${roomId}`
+                    url: `https://catchat-six.vercel.app//room/${roomId}`
                 }
             ],
             scenario: {
                 mode: ZegoUIKitPrebuilt.GroupCall
             },
             showScreenSharingButton: true,
+            showRoomTimer: true,
         })
     }
     return(
