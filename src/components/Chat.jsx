@@ -162,15 +162,19 @@ useEffect(() => {
     setReplyIndicator(`Replying to:  ${rplyTo}`); 
     document.getElementById("cnclRplyBtn").style.display = "flex";
   };
+  const intervalRef = useRef(null);
 
   const startRecording = async () => {
-    setRecording("Recording...");
+    setRecording("|");
     document.getElementById("endRcrd").style.display= "flex";
     document.getElementById("cancelRcrd").style.display= "flex";
     document.getElementById("startRcrd").style.display= "none";
     document.getElementById("msgIn").style.display= "none";
     document.getElementById("send").style.display= "none";
+
+   // let interval;
     try {
+
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       const mediaRecorder = new MediaRecorder(stream);
   
@@ -181,21 +185,35 @@ useEffect(() => {
       mediaRecorder.start();
   
       mediaRecorderRef.current = mediaRecorder;
+
+      intervalRef.current = setInterval(() => {
+        setRecording((prev) => prev + "|");
+      }, 400);
+  
+     // mediaRecorderRef.current.interval = interval; 
+
     } catch (err) {
       console.error("Error accessing microphone:", err);
+     // if (interval) clearInterval(interval);
     }
   };
   
   const stopRecording = () => {
     if (mediaRecorderRef.current) {
       mediaRecorderRef.current.stop();
-      mediaRecorderRef.current.stream.getTracks().forEach(track => track.stop());
-      setIsRecording(false);
+      mediaRecorderRef.current.stream.getTracks().forEach((track) => track.stop());
       mediaRecorderRef.current = null;
-      document.getElementById("endRcrd").style.display = "none"; 
-      setRecording("Ready To Share");
     }
-    document.getElementById("send").style.display= "flex";
+  
+    // Clear the interval using intervalRef.current
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current);
+      intervalRef.current = null;
+    }
+  
+    setRecording("Ready To Share");
+    document.getElementById("endRcrd").style.display = "none";
+    document.getElementById("send").style.display = "flex";
   };
 
   const cancelRecording = () => {
@@ -206,7 +224,11 @@ useEffect(() => {
           mediaRecorderRef.current.stream.getTracks().forEach((track) => track.stop());
           mediaRecorderRef.current = null;
         }
-        setRecording("");   
+        if (intervalRef.current) {
+          clearInterval(intervalRef.current);
+          intervalRef.current = null;
+        }
+        setRecording("");
         setAudioBlob(null);  
         
         document.getElementById("endRcrd").style.display = "none"; 
@@ -381,6 +403,7 @@ const cancelRply = () => {
       <source src={`data:audio/webm;base64,${c.audio}`} type="audio/webm" />
       Your browser does not support the audio element.
     </audio>
+    <div className='audioCntrls'>
     <button id={`play-${c.key}`}
      style={{
         background: "none",
@@ -418,7 +441,8 @@ const cancelRply = () => {
     >
       <FontAwesomeIcon id='pauseIcon' icon={faPause} />
     </button>
-    
+    <div className='wavesInMsg'>||||||||||||||||||||||</div>
+    </div>
   </div>
 )}
 
@@ -503,7 +527,8 @@ const cancelRply = () => {
           <div className="preview">{preview}
         <button id="unSelect" onClick={unSelect}><FontAwesomeIcon icon={faXmark} /></button>
         </div>
-        <div id='recording'>{recording}
+        <div id='recording'>
+          <div className='wave'>{recording}</div>
         <button id="endRcrd" onClick={stopRecording}><FontAwesomeIcon icon={faCheck} /></button>
         </div>
           </div>
